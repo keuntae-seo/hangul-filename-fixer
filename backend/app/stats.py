@@ -1,58 +1,55 @@
-"""방문자 통계 관리"""
+# backend/app/stats.py
 import json
 from pathlib import Path
 from datetime import datetime
-from typing import Dict
 
-STATS_FILE = Path("stats.json")
+STATS_FILE = Path("data/stats.json")
 
-def load_stats() -> Dict:
-    """통계 파일 로드"""
-    if not STATS_FILE.exists():
-        return {
-            "total_views": 0,
-            "total_files": 0,
-            "today": datetime.now().strftime("%Y-%m-%d"),
-            "today_views": 0,
-        }
-    
-    try:
-        with open(STATS_FILE, "r") as f:
-            stats = json.load(f)
-            # 날짜가 바뀌었으면 today_views 초기화
-            today = datetime.now().strftime("%Y-%m-%d")
-            if stats.get("today") != today:
-                stats["today"] = today
-                stats["today_views"] = 0
-            return stats
-    except:
-        return {
-            "total_views": 0,
-            "total_files": 0,
-            "today": datetime.now().strftime("%Y-%m-%d"),
-            "today_views": 0,
-        }
+def _ensure_data_dir():
+    """data 디렉토리 생성"""
+    STATS_FILE.parent.mkdir(exist_ok=True)
 
-def save_stats(stats: Dict):
-    """통계 파일 저장"""
-    try:
-        with open(STATS_FILE, "w") as f:
-            json.dump(stats, f, indent=2)
-    except:
-        pass
+def load_stats():
+    """통계 로드"""
+    _ensure_data_dir()
+    if STATS_FILE.exists():
+        try:
+            with open(STATS_FILE, 'r', encoding='utf-8') as f:
+                return json.load(f)
+        except:
+            pass
+    return {
+        "total_views": 0,
+        "today_views": 0,
+        "total_files": 0,
+        "last_date": datetime.now().strftime("%Y-%m-%d")
+    }
+
+def save_stats(stats):
+    """통계 저장"""
+    _ensure_data_dir()
+    with open(STATS_FILE, 'w', encoding='utf-8') as f:
+        json.dump(stats, f, ensure_ascii=False, indent=2)
 
 def increment_view():
-    """페이지 뷰 증가"""
+    """방문자 수 증가"""
     stats = load_stats()
-    stats["total_views"] += 1
-    stats["today_views"] += 1
+    today = datetime.now().strftime("%Y-%m-%d")
+    
+    # 날짜가 바뀌면 오늘 방문자 수 초기화
+    if stats.get("last_date") != today:
+        stats["today_views"] = 0
+        stats["last_date"] = today
+    
+    stats["total_views"] = stats.get("total_views", 0) + 1
+    stats["today_views"] = stats.get("today_views", 0) + 1
+    
     save_stats(stats)
     return stats
 
-def increment_files(count: int = 1):
-    """파일 처리 수 증가"""
+def increment_files(count=1):
+    """처리된 파일 수 증가"""
     stats = load_stats()
-    stats["total_files"] += count
+    stats["total_files"] = stats.get("total_files", 0) + count
     save_stats(stats)
     return stats
-
