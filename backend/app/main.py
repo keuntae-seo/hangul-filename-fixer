@@ -21,11 +21,9 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-
 @app.get("/health")
 def health():
     return {"status": "ok"}
-
 
 @app.post("/rename", response_model=BatchRenameResponse)
 async def rename(files: List[UploadFile] = File(...), zip: bool = False):
@@ -42,39 +40,44 @@ async def rename(files: List[UploadFile] = File(...), zip: bool = False):
         size = len(chunk)
         if size > settings.MAX_FILE_MB * 1024 * 1024:
             raise HTTPException(413, detail=f"{f.filename}: file too large")
-
+        
         new_name = fix_name(f.filename)
-
+        
         # ZIP 파일인 경우: 내부 파일명도 정규화
         if f.filename and f.filename.lower().endswith('.zip'):
             try:
                 import zipfile
-
+                
                 # 원본 ZIP 읽기
                 original_zip = io.BytesIO(chunk)
-
+                
                 # 새 ZIP 생성
                 new_zip_buf = io.BytesIO()
-
+                
                 with zipfile.ZipFile(original_zip, 'r') as zf_in:
                     with zipfile.ZipFile(new_zip_buf, 'w', compression=zipfile.ZIP_DEFLATED) as zf_out:
                         for item in zf_in.infolist():
                             # 디렉토리는 건너뛰기
                             if item.is_dir():
                                 continue
-
+                            
                             # 파일 읽기
                             file_data = zf_in.read(item.filename)
-
+                            
                             # 파일명 정규화 (경로 포함)
                             # 경로 구분자 처리 (Windows/Unix 호환)
                             path_parts = item.filename.replace('\\', '/').split('/')
                             normalized_parts = [fix_name(part) for part in path_parts]
                             normalized_filename = '/'.join(normalized_parts)
-
+                            
+                            # 새 ZipInfo 생성 (UTF-8 플래그 설정)
+                            zip_info = zipfile.ZipInfo(normalized_filename)
+                            zip_info.compress_type = zipfile.ZIP_DEFLATED
+                            zip_info.flag_bits = 0x800  # UTF-8 파일명 플래그
+                            
                             # 새 ZIP에 쓰기
-                            zf_out.writestr(normalized_filename, file_data)
-
+                            zf_out.writestr(zip_info, file_data)
+                
                 new_zip_buf.seek(0)
                 # 한글 파일명을 URL 인코딩 (RFC 2231)
                 encoded_filename = quote(new_name, safe='')
@@ -82,13 +85,13 @@ async def rename(files: List[UploadFile] = File(...), zip: bool = False):
                     "Content-Disposition": f"attachment; filename*=UTF-8''{encoded_filename}"
                 }
                 return StreamingResponse(new_zip_buf, media_type="application/zip", headers=headers)
-
+                
             except Exception as e:
                 # ZIP 파일 처리 실패 시, 일반 파일로 처리
                 print(f"ZIP processing error: {str(e)}")
                 # 원본 ZIP을 그대로 정규화된 이름으로 반환
                 pass
-
+        
         # 일반 파일을 직접 반환
         buf = io.BytesIO(chunk)
         buf.seek(0)
@@ -107,7 +110,7 @@ async def rename(files: List[UploadFile] = File(...), zip: bool = False):
             media_type = "image/jpeg"
         elif new_name.endswith('.png'):
             media_type = "image/png"
-
+        
         return StreamingResponse(buf, media_type=media_type, headers=headers)
 
     # ZIP 모드일 경우 in-memory zip 생성
@@ -127,7 +130,13 @@ async def rename(files: List[UploadFile] = File(...), zip: bool = False):
                 if size > settings.MAX_FILE_MB * 1024 * 1024:
                     raise HTTPException(413, detail=f"{f.filename}: file too large")
                 new_name = fix_name(f.filename)
-                zf.writestr(new_name, chunk)
+                
+                # ZipInfo 생성 (UTF-8 플래그 설정)
+                zip_info = zipfile.ZipInfo(new_name)
+                zip_info.compress_type = zipfile.ZIP_DEFLATED
+                zip_info.flag_bits = 0x800  # UTF-8 파일명 플래그
+                
+                zf.writestr(zip_info, chunk)
                 results.append(RenameResult(original=f.filename, renamed=new_name))
         buf.seek(0)
         # 한글 파일명을 URL 인코딩 (RFC 2231)

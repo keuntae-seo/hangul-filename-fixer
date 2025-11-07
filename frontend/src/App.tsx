@@ -30,11 +30,11 @@ export default function App() {
       } 
       // 여러 파일인 경우
       else {
-        const zip = await uploadForZip(files);
-        const url = URL.createObjectURL(zip);
+        const { blob, filename } = await uploadForZip(files);
+        const url = URL.createObjectURL(blob);
         const a = document.createElement('a');
         a.href = url; 
-        a.download = 'renamed-files.zip'; 
+        a.download = filename; 
         a.click();
         URL.revokeObjectURL(url);
         setMessage(`완료! ${files.length}개 파일이 ZIP으로 다운로드되었습니다.`);
