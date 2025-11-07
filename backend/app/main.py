@@ -31,8 +31,75 @@ async def rename(files: List[UploadFile] = File(...), zip: bool = False):
 
     results: List[RenameResult] = []
 
+    # 단일 파일 모드
+    if len(files) == 1 and not zip:
+        f = files[0]
+        # 파일 크기 체크
+        chunk = await f.read()
+        size = len(chunk)
+        if size > settings.MAX_FILE_MB * 1024 * 1024:
+            raise HTTPException(413, detail=f"{f.filename}: file too large")
+        
+        new_name = fix_name(f.filename)
+        
+        # ZIP 파일인 경우: 내부 파일명도 정규화
+        if f.filename and f.filename.lower().endswith('.zip'):
+            try:
+                import zipfile
+                
+                # 원본 ZIP 읽기
+                original_zip = io.BytesIO(chunk)
+                
+                # 새 ZIP 생성
+                new_zip_buf = io.BytesIO()
+                
+                with zipfile.ZipFile(original_zip, 'r') as zf_in:
+                    with zipfile.ZipFile(new_zip_buf, 'w', compression=zipfile.ZIP_DEFLATED) as zf_out:
+                        for item in zf_in.infolist():
+                            # 디렉토리는 건너뛰기
+                            if item.is_dir():
+                                continue
+                            
+                            # 파일 읽기
+                            file_data = zf_in.read(item.filename)
+                            
+                            # 파일명 정규화 (경로 포함)
+                            normalized_filename = fix_name(item.filename)
+                            
+                            # 새 ZIP에 쓰기
+                            zf_out.writestr(normalized_filename, file_data)
+                
+                new_zip_buf.seek(0)
+                headers = {
+                    "Content-Disposition": f'attachment; filename="{new_name}"'
+                }
+                return StreamingResponse(new_zip_buf, media_type="application/zip", headers=headers)
+                
+            except zipfile.BadZipFile:
+                # ZIP 파일이 손상된 경우, 일반 파일로 처리
+                pass
+        
+        # 일반 파일을 직접 반환
+        buf = io.BytesIO(chunk)
+        buf.seek(0)
+        headers = {
+            "Content-Disposition": f'attachment; filename="{new_name}"'
+        }
+        # 파일 타입 추정 (간단한 버전)
+        media_type = "application/octet-stream"
+        if new_name.endswith('.txt'):
+            media_type = "text/plain"
+        elif new_name.endswith('.pdf'):
+            media_type = "application/pdf"
+        elif new_name.endswith(('.jpg', '.jpeg')):
+            media_type = "image/jpeg"
+        elif new_name.endswith('.png'):
+            media_type = "image/png"
+        
+        return StreamingResponse(buf, media_type=media_type, headers=headers)
+
     # ZIP 모드일 경우 in-memory zip 생성
-    if zip:
+    if zip or len(files) > 1:
         try:
             import zipfile
         except ImportError:  # 표준 라이브러리이므로 실제로는 발생 X

@@ -1,5 +1,5 @@
 import React, { useState, DragEvent } from 'react';
-import { uploadForZip } from './api';
+import { uploadForZip, uploadSingleFile } from './api';
 
 export default function App() {
   const [drag, setDrag] = useState(false);
@@ -16,11 +16,29 @@ export default function App() {
   async function run(files: File[]) {
     try {
       setBusy(true); setMessage('처리 중...');
-      const zip = await uploadForZip(files);
-      const url = URL.createObjectURL(zip);
-      const a = document.createElement('a');
-      a.href = url; a.download = 'renamed-files.zip'; a.click();
-      setMessage('완료! ZIP이 내려받기 되었습니다.');
+      
+      // 단일 파일인 경우
+      if (files.length === 1) {
+        const { blob, filename } = await uploadSingleFile(files[0]);
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url; 
+        a.download = filename;
+        a.click();
+        URL.revokeObjectURL(url);
+        setMessage(`완료! "${filename}" 파일이 다운로드되었습니다.`);
+      } 
+      // 여러 파일인 경우
+      else {
+        const zip = await uploadForZip(files);
+        const url = URL.createObjectURL(zip);
+        const a = document.createElement('a');
+        a.href = url; 
+        a.download = 'renamed-files.zip'; 
+        a.click();
+        URL.revokeObjectURL(url);
+        setMessage(`완료! ${files.length}개 파일이 ZIP으로 다운로드되었습니다.`);
+      }
     } catch (e) {
       setMessage('오류가 발생했습니다.');
     } finally {
@@ -46,7 +64,12 @@ export default function App() {
           const files = Array.from(e.target.files || []);
           if (files.length) run(files);
         }} />
-        <p style={{fontSize: 12, color: '#666'}}>서버에 업로드하여 ZIP으로 내려받습니다. 파일 자체는 저장하지 않도록 서버를 구성합니다.</p>
+        <p style={{fontSize: 12, color: '#666'}}>
+          📄 단일 파일: 정규화된 파일명으로 바로 다운로드<br/>
+          📦 ZIP 파일: 내부 파일명도 정규화 후 다운로드<br/>
+          📚 여러 파일: ZIP으로 묶어서 다운로드<br/>
+          <span style={{fontSize: 11}}>파일은 서버에 저장되지 않습니다.</span>
+        </p>
       </div>
 
       <details style={{marginTop: 16}}>
