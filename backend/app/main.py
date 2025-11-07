@@ -19,6 +19,7 @@ app.add_middleware(
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
+    expose_headers=["Content-Disposition"],  # 프론트엔드가 이 헤더를 읽을 수 있도록 허용.
 )
 
 @app.get("/health")
