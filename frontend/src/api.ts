@@ -3,13 +3,17 @@ const API_URL = import.meta.env.VITE_API_URL || '/api';
 
 // Content-Disposition 헤더에서 파일명 추출 (RFC 2231 지원)
 function extractFilename(disposition: string | null): string {
+  console.log('Content-Disposition:', disposition); // 디버깅용
+  
   if (!disposition) return 'renamed-file';
   
   // RFC 2231 형식: filename*=UTF-8''encoded-name
   const rfc2231Match = disposition.match(/filename\*=UTF-8''([^;]+)/i);
   if (rfc2231Match) {
     try {
-      return decodeURIComponent(rfc2231Match[1]);
+      const decoded = decodeURIComponent(rfc2231Match[1]);
+      console.log('Decoded filename:', decoded); // 디버깅용
+      return decoded;
     } catch (e) {
       console.error('Failed to decode filename:', e);
     }
@@ -18,6 +22,7 @@ function extractFilename(disposition: string | null): string {
   // 일반 형식: filename="name" 또는 filename=name
   const normalMatch = disposition.match(/filename="?([^";\n]+)"?/i);
   if (normalMatch) {
+    console.log('Normal filename:', normalMatch[1]); // 디버깅용
     return normalMatch[1];
   }
   
