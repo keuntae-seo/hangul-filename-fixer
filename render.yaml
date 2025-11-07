@@ -1,0 +1,24 @@
+services:
+  - type: web
+    name: hangul-filename-fixer-api
+    env: docker
+    dockerfilePath: ./backend/Dockerfile
+    dockerContext: ./backend
+    
+    # 환경변수 설정
+    envVars:
+      - key: ENVIRONMENT
+        value: production
+      - key: ALLOWED_ORIGINS
+        # Netlify 배포 후 여기에 프론트엔드 URL 입력
+        # 예: https://hangul-filename-fixer.netlify.app
+        value: https://your-app.netlify.app
+      - key: MAX_FILE_MB
+        value: 100
+    
+    # Health check 설정
+    healthCheckPath: /health
+    
+    # 플랜 설정 (무료 플랜)
+    plan: free
+

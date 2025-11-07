@@ -1,0 +1,10 @@
+# 프론트엔드 환경변수 설정 예제
+# 로컬 개발: 이 파일을 .env로 복사하여 사용하세요
+# Netlify 배포: Netlify 대시보드의 Environment variables에서 설정
+
+# API 백엔드 URL
+# 개발 환경: 설정하지 않으면 /api 프록시 사용 (vite.config.ts)
+# 프로덕션 환경: Render에서 배포된 백엔드 URL
+# 예시: VITE_API_URL=https://your-backend.onrender.com
+VITE_API_URL=https://your-backend-url.onrender.com
+

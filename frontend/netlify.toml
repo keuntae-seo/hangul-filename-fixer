@@ -1,0 +1,24 @@
+[build]
+  # 빌드 명령어
+  command = "npm run build"
+  # 빌드 결과물 디렉토리
+  publish = "dist"
+  
+  # 환경변수 (Netlify UI에서도 설정 가능)
+  # VITE_API_URL은 Netlify 대시보드에서 설정하세요
+
+# SPA를 위한 리다이렉트 규칙
+[[redirects]]
+  from = "/*"
+  to = "/index.html"
+  status = 200
+
+# 헤더 설정 (보안 강화)
+[[headers]]
+  for = "/*"
+  [headers.values]
+    X-Frame-Options = "DENY"
+    X-Content-Type-Options = "nosniff"
+    X-XSS-Protection = "1; mode=block"
+    Referrer-Policy = "no-referrer-when-downgrade"
+

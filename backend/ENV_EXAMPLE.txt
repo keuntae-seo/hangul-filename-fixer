@@ -1,0 +1,15 @@
+# 백엔드 환경변수 설정 예제
+# 이 파일을 .env로 복사하여 사용하세요
+
+# 환경 설정
+ENVIRONMENT=production
+
+# CORS 허용 오리진 (쉼표로 구분하여 여러 도메인 추가 가능)
+# 프로덕션: Netlify에서 배포된 프론트엔드 URL
+# 개발: http://localhost:5173
+# 예시: ALLOWED_ORIGINS=https://your-app.netlify.app,http://localhost:5173
+ALLOWED_ORIGINS=https://your-app.netlify.app
+
+# 파일 크기 제한 (MB)
+MAX_FILE_MB=100
+
