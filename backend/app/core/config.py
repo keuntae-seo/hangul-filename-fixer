@@ -1,7 +1,7 @@
 # backend/app/core/config.py
 import os
 from pydantic_settings import BaseSettings
-from typing import List
+from typing import List, Optional
 
 class Settings(BaseSettings):
     PROJECT_NAME: str = "Hangul Filename Fixer API"
@@ -12,6 +12,9 @@ class Settings(BaseSettings):
     
     # 환경 구분
     ENVIRONMENT: str = os.getenv("ENVIRONMENT", "development")
+    
+    # PostgreSQL 데이터베이스 URL (선택 사항)
+    DATABASE_URL: Optional[str] = None
     
     @property
     def cors_origins(self) -> List[str]:

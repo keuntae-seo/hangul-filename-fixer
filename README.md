@@ -1,269 +1,181 @@
 # 한글 파일명 고쳐주기 🇰🇷
 
-한글 파일명이 자음/모음으로 분해되어 깨진 경우(예: `ㅂㅗㄱㅗㅅㅓ.hwp`)를 정상적인 한글(예: `보고서.hwp`)로 복구하는 웹 서비스입니다.
+**깨진 한글 파일명을 단 몇 초만에 자동으로 복구하세요!**
 
-## 문제 상황
+웹사이트: [https://your-app.netlify.app](https://your-app.netlify.app)
 
-macOS에서 생성한 한글 파일명이 Windows나 다른 시스템에서 자음/모음으로 분해되어 보이는 현상을 해결합니다:
-- ❌ `ㅂㅗㄱㅗㅅㅓ.hwp` (NFD 형식 - 분해됨)
-- ✅ `보고서.hwp` (NFC 형식 - 정상)
+---
 
-## 기능
+## 🤔 이런 경험 있으신가요?
 
-- 🔄 **유니코드 정규화**: NFD → NFC 변환으로 자모 분해 문제 해결
-- 📦 **일괄 처리**: 여러 파일을 한 번에 업로드하여 ZIP으로 다운로드
-- 🚫 **금지 문자 처리**: Windows 파일 시스템 규칙에 맞게 자동 변환
-- 🔒 **개인정보 보호**: 파일은 서버에 저장되지 않고 즉시 처리 후 삭제
-
-## 기술 스택
-
-### 백엔드
-- **FastAPI**: Python 웹 프레임워크
-- **Python 3.12**: unicodedata를 이용한 NFC 정규화
-- **Docker**: 컨테이너 배포
-- **Render**: 백엔드 호스팅
-
-### 프론트엔드
-- **React 18** + **TypeScript**
-- **Vite**: 빌드 도구
-- **Netlify**: 프론트엔드 호스팅
-
-## 프로젝트 구조
+맥(macOS)에서 만든 파일을 윈도우(Windows)로 옮기거나, 클라우드에서 다운로드했을 때:
 
 ```
-hangul-filename-fixer/
-├── backend/              # FastAPI 백엔드
-│   ├── app/
-│   │   ├── core/
-│   │   │   ├── config.py      # 환경 설정
-│   │   │   └── normalize.py   # 파일명 정규화 로직
-│   │   ├── main.py            # API 엔드포인트
-│   │   └── schemas.py         # Pydantic 모델
-│   ├── test/
-│   │   └── test_normalize.py  # 테스트
-│   ├── Dockerfile
-│   └── requirements.txt
-├── frontend/             # React 프론트엔드
-│   ├── src/
-│   │   ├── App.tsx            # 메인 컴포넌트
-│   │   ├── api.ts             # API 클라이언트
-│   │   └── main.tsx
-│   ├── Dockerfile
-│   ├── netlify.toml           # Netlify 배포 설정
-│   └── package.json
-├── render.yaml           # Render 배포 설정
-└── docker-compose.yml    # 로컬 개발 환경
+❌ ㅂㅗㄱㅗㅅㅓ.hwp
+❌ ㄷㅔㅇㅣㅌㅓ.xlsx
+❌ ㅍㅡㄹㅗㅈㅔㄱㅌㅡ.zip
 ```
 
-## 로컬 개발 환경 설정
+이렇게 파일명이 자음과 모음으로 쪼개져서 보이는 불편함을 **한글 파일명 고쳐주기**가 해결해드립니다!
 
-### 1. 저장소 클론
+---
 
-```bash
-git clone <repository-url>
-cd hangul-filename-fixer
-```
+## ✨ 주요 기능
 
-### 2. Docker Compose로 실행 (권장)
+### 📁 단일 파일 자동 복구
+파일 하나만 올리면 바로 정상적인 이름으로 다운로드됩니다.
 
-```bash
-docker-compose up --build
-```
+**예시:**
+- 업로드: `ㅂㅗㄱㅗㅅㅓ.txt`
+- 다운로드: `보고서.txt` ✅
 
-- 백엔드: http://localhost:8000
-- 프론트엔드: http://localhost:5173
-- API 문서: http://localhost:8000/docs
+### 📦 ZIP 파일 내부까지 자동 복구
+압축 파일(`.zip`)을 올리면 안에 있는 모든 파일명도 함께 복구됩니다!
 
-### 3. 개별 실행
+**예시:**
+- 업로드: `ㄷㅔㅇㅣㅌㅓ.zip` (안에 `ㅍㅏㅇㅣㄹ1.txt`, `ㅍㅏㅇㅣㄹ2.txt` 포함)
+- 다운로드: `데이터.zip` (안에 `파일1.txt`, `파일2.txt` 포함) ✅
 
-#### 백엔드
+### 📄 파일 내용도 자동 복구
+텍스트 파일(`.txt`)과 한글 문서(`.hwp`) 안의 깨진 글자도 함께 고쳐줍니다!
 
-```bash
-cd backend
-python -m venv venv
-source venv/bin/activate  # Windows: venv\Scripts\activate
-pip install -r requirements.txt
-uvicorn app.main:app --reload --port 8000
-```
+**예시:**
+- 파일명뿐만 아니라 문서 내용 중 `ㅎㅏㄴㄱㅡㄹ` → `한글`로 자동 변환 ✅
 
-#### 프론트엔드
+### 🚀 여러 파일 한 번에 처리
+파일 여러 개를 동시에 올리면 ZIP 파일로 묶어서 다운로드됩니다.
 
-```bash
-cd frontend
-npm install
-npm run dev
-```
+---
 
-## 테스트 실행
+## 🎯 사용 방법
 
-```bash
-cd backend
-pytest test/test_normalize.py -v
-```
+### 1️⃣ 웹사이트 접속
+브라우저에서 [https://your-app.netlify.app](https://your-app.netlify.app)에 접속하세요.
 
-## 배포 가이드
+### 2️⃣ 파일 선택
+두 가지 방법으로 파일을 올릴 수 있습니다:
+- **드래그 앤 드롭**: 파일을 화면에 끌어다 놓기
+- **클릭해서 선택**: 화면 중앙을 클릭하여 파일 선택
 
-### 백엔드 배포 (Render)
+### 3️⃣ 자동 다운로드
+업로드하자마자 자동으로 복구된 파일이 다운로드됩니다!
 
-1. **Render 계정 생성 및 로그인**
-   - https://render.com 접속
+---
 
-2. **새 Web Service 생성**
-   - "New +" → "Web Service" 선택
-   - GitHub 저장소 연결
+## 🔒 개인정보 보호
 
-3. **설정**
-   - **Environment**: `Docker`
-   - **Dockerfile Path**: `./backend/Dockerfile`
-   - **Docker Context**: `./backend`
-   - 또는 프로젝트 루트에 `render.yaml` 사용
+**여러분의 파일은 100% 안전합니다!**
 
-4. **환경변수 설정**
-   
-   Render 대시보드 → Environment 탭에서 다음 추가:
-   
-   ```
-   ENVIRONMENT=production
-   ALLOWED_ORIGINS=https://your-app.netlify.app
-   MAX_FILE_MB=100
-   ```
+- ✅ 파일은 서버에 **저장되지 않습니다**
+- ✅ 처리 즉시 메모리에서 **자동 삭제**됩니다
+- ✅ 제3자와 **절대 공유되지 않습니다**
+- ✅ 모든 처리는 **실시간으로 완료**됩니다
 
-5. **배포**
-   - "Create Web Service" 클릭
-   - 배포 완료 후 URL 복사 (예: `https://your-app.onrender.com`)
+---
 
-### 프론트엔드 배포 (Netlify)
+## 💡 이런 경우에 사용하세요
 
-1. **Netlify 계정 생성 및 로그인**
-   - https://netlify.com 접속
+### ✅ 사용 가능한 경우
+- macOS ↔ Windows 간 파일 이동 시 깨진 한글 파일명
+- 클라우드(Google Drive, Dropbox 등)에서 다운로드한 깨진 파일
+- USB, 외장하드에서 복사한 한글 파일명
+- ZIP 파일 안의 여러 파일명을 한 번에 복구
+- 문서 내용까지 깨진 `.txt`, `.hwp` 파일
 
-2. **새 사이트 배포**
-   - "Add new site" → "Import an existing project"
-   - GitHub 저장소 연결
+### ❌ 해결할 수 없는 경우
+- 파일 자체가 손상된 경우 (파일명만 복구됩니다)
+- 한글이 아닌 다른 언어의 문자 깨짐
 
-3. **빌드 설정**
-   - **Base directory**: `frontend`
-   - **Build command**: `npm run build`
-   - **Publish directory**: `frontend/dist`
+---
 
-4. **환경변수 설정**
-   
-   Netlify 대시보드 → Site settings → Environment variables:
-   
-   ```
-   VITE_API_URL=https://your-app.onrender.com
-   ```
-   
-   ⚠️ **중요**: Render에서 받은 백엔드 URL을 정확히 입력하세요!
+## 📊 지원 파일 형식
 
-5. **배포**
-   - "Deploy site" 클릭
-   - 배포 완료 후 사이트 URL 확인
+### 파일명 복구
+**모든 파일 형식 지원**
+- 문서: `.txt`, `.hwp`, `.doc`, `.docx`, `.pdf`
+- 이미지: `.jpg`, `.png`, `.gif`, `.webp`
+- 압축: `.zip`, `.rar`, `.7z`
+- 기타: 모든 확장자
 
-6. **CORS 설정 업데이트**
-   
-   Netlify URL을 받은 후, Render의 환경변수 업데이트:
-   ```
-   ALLOWED_ORIGINS=https://your-actual-site.netlify.app
-   ```
+### 파일 내용 복구
+**제한적 지원**
+- `.txt` (텍스트 파일)
+- `.hwp` (한글 문서)
 
-## API 엔드포인트
+---
 
-### `GET /health`
-서버 상태 확인
+## ⚙️ 제한 사항
 
-**Response:**
-```json
-{
-  "status": "ok"
-}
-```
+- **파일 크기 제한**: 개별 파일 최대 100MB
+- **처리 시간**: 파일 크기에 따라 수 초 ~ 수십 초
+- **브라우저 호환**: Chrome, Firefox, Safari, Edge 최신 버전
 
-### `POST /rename`
-파일명 정규화
+---
 
-**Parameters:**
-- `files`: 업로드할 파일들 (multipart/form-data)
-- `zip`: ZIP으로 다운로드 여부 (boolean, query parameter)
+## ❓ FAQ (자주 묻는 질문)
 
-**Response (zip=false):**
-```json
-{
-  "results": [
-    {
-      "original": "ㅂㅗㄱㅗㅅㅓ.hwp",
-      "renamed": "보고서.hwp"
-    }
-  ],
-  "zipped": false
-}
-```
+### Q1. 정말 무료인가요?
+✅ 네, 완전히 무료입니다! 광고도 없습니다.
 
-**Response (zip=true):**
-- `Content-Type: application/zip`
-- ZIP 파일 다운로드
+### Q2. 회원가입이 필요한가요?
+✅ 아니요, 로그인 없이 바로 사용 가능합니다.
 
-## 환경변수
+### Q3. 한 번에 몇 개의 파일을 올릴 수 있나요?
+✅ 제한 없이 여러 개 가능합니다. (단, 개별 파일은 100MB 이하)
 
-### 백엔드
+### Q4. 휴대폰에서도 사용할 수 있나요?
+✅ 네, 모바일 브라우저에서도 동일하게 작동합니다.
 
-| 변수명 | 설명 | 기본값 | 필수 |
-|--------|------|--------|------|
-| `ENVIRONMENT` | 실행 환경 | `development` | ❌ |
-| `ALLOWED_ORIGINS` | CORS 허용 오리진 (쉼표 구분) | `http://localhost:5173` | ⚠️ 프로덕션에서 필수 |
-| `MAX_FILE_MB` | 개별 파일 최대 크기 (MB) | `100` | ❌ |
+### Q5. 압축 파일 안에 폴더가 여러 개 있어도 되나요?
+✅ 네, ZIP 파일 내부 구조를 유지하면서 모든 파일명을 복구합니다.
 
-### 프론트엔드
+### Q6. 처음 접속 시 느린데요?
+⚠️ 무료 서버를 사용하여 15분 이상 사용하지 않으면 절전 모드로 전환됩니다. 첫 접속 시 30초 정도 기다려주세요.
 
-| 변수명 | 설명 | 기본값 | 필수 |
-|--------|------|--------|------|
-| `VITE_API_URL` | 백엔드 API URL | `/api` (개발 시 프록시) | ⚠️ 프로덕션에서 필수 |
+### Q7. 오류가 발생했어요!
+💬 [GitHub Issues](https://github.com/keuntae-seo/hangul-filename-fixer/issues)에 문제를 알려주세요!
 
-## 주의사항
+---
 
-1. **CORS 설정**: 프로덕션 배포 시 반드시 프론트엔드 URL을 백엔드의 `ALLOWED_ORIGINS`에 추가하세요.
+## 🛠 기술 정보
 
-2. **파일 크기 제한**: 기본값은 100MB입니다. 필요 시 `MAX_FILE_MB` 환경변수로 조정하세요.
+궁금하신 개발자분들을 위한 정보입니다:
 
-3. **무료 플랜 제한**:
-   - Render 무료 플랜: 15분 비활성 시 슬립 모드 (첫 요청 시 재시작 지연)
-   - Netlify 무료 플랜: 월 100GB 대역폭
+- **백엔드**: Python (FastAPI)
+- **프론트엔드**: React + TypeScript
+- **호스팅**: Render (백엔드) + Netlify (프론트엔드)
+- **처리 방식**: 유니코드 정규화 (NFD → NFC)
+- **로깅**: 파일명 변환 이력 자동 기록 (파일 내용은 기록 안 됨)
 
-4. **개인정보 보호**: 서버는 파일을 저장하지 않습니다. 처리 후 즉시 메모리에서 삭제됩니다.
+자세한 개발 정보:
+- [QUICKSTART.md](./QUICKSTART.md) - 로컬 개발 환경 설정
+- [DEPLOYMENT.md](./DEPLOYMENT.md) - 프로덕션 배포 가이드
+- [LOGS.md](./LOGS.md) - 변환 로그 확인 방법
+- [POSTGRES_SETUP.md](./POSTGRES_SETUP.md) - PostgreSQL로 로그 영구 저장하기 (무료)
 
-## 문제 해결
+---
 
-### CORS 오류
-```
-Access to fetch at '...' has been blocked by CORS policy
-```
+## 📞 문의 및 버그 제보
 
-**해결방법**: Render 환경변수 `ALLOWED_ORIGINS`에 Netlify URL을 정확히 추가하세요.
+- **GitHub**: [https://github.com/keuntae-seo/hangul-filename-fixer](https://github.com/keuntae-seo/hangul-filename-fixer)
+- **Issues**: [버그 제보하기](https://github.com/keuntae-seo/hangul-filename-fixer/issues)
 
-### 빌드 오류 (프론트엔드)
-```
-Cannot find module '@vitejs/plugin-react'
-```
+---
 
-**해결방법**:
-```bash
-cd frontend
-npm install
-```
+## 📜 라이선스
 
-### Render 슬립 모드
-무료 플랜에서 15분 비활성 시 서버가 슬립 모드로 전환됩니다. 첫 요청 시 30초 정도 소요될 수 있습니다.
+MIT License - 자유롭게 사용하세요!
 
-## 라이선스
+---
 
-MIT License
+## 💖 이 프로젝트가 도움이 되셨나요?
 
-## 기여
+GitHub에서 ⭐ 스타를 눌러주세요!
 
-이슈 및 PR을 환영합니다!
+[⭐ Star on GitHub](https://github.com/keuntae-seo/hangul-filename-fixer)
 
-## 작성자
+---
 
-- GitHub: [your-username]
-- Email: [your-email]
-
+<div align="center">
+  <sub>© 2025 keuntae-seo. 모든 권리 보유.</sub>
+</div>

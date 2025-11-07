@@ -7,6 +7,10 @@
   # 환경변수 (Netlify UI에서도 설정 가능)
   # VITE_API_URL은 Netlify 대시보드에서 설정하세요
 
+# frontend 폴더가 변경되었을 때만 빌드
+[build.ignore]
+  command = "git diff --quiet $CACHED_COMMIT_REF $COMMIT_REF frontend/"
+
 # SPA를 위한 리다이렉트 규칙
 [[redirects]]
   from = "/*"

@@ -128,3 +128,152 @@ def fix_name(filename: str) -> str:
     ext = filename[dot:] if has_ext else ""
     clean = sanitize_base(base)
     return f"{clean}{ext}"
+
+
+def fix_text_content(content: str) -> str:
+    """텍스트 내용의 한글 자모를 완성형으로 조합"""
+    return compose_hangul(content)
+
+
+def fix_hwp_content(hwp_data: bytes) -> tuple[bytes, bool]:
+    """
+    HWP 파일 내용의 한글 자모를 조합
+    Returns: (수정된 데이터, 수정 여부)
+    """
+    import zipfile
+    import io
+    import zlib
+    
+    try:
+        # HWP 5.0+ (ZIP 기반) 확인
+        zip_file = io.BytesIO(hwp_data)
+        if zipfile.is_zipfile(zip_file):
+            print("[DEBUG] HWP 5.0+ ZIP 포맷 감지")
+            return fix_hwp5_content(hwp_data)
+        
+        # HWP 3.0~4.0 (OLE 기반)
+        print("[DEBUG] HWP 3.0~4.0 OLE 포맷 시도")
+        return fix_hwp3_content(hwp_data)
+        
+    except Exception as e:
+        print(f"[DEBUG] HWP 처리 실패: {e}")
+        return hwp_data, False
+
+
+def fix_hwp5_content(hwp_data: bytes) -> tuple[bytes, bool]:
+    """HWP 5.0+ (ZIP 기반) 파일 처리"""
+    import zipfile
+    import io
+    import re
+    
+    try:
+        zip_file = io.BytesIO(hwp_data)
+        modified = False
+        
+        # 새 ZIP 생성
+        new_zip = io.BytesIO()
+        
+        with zipfile.ZipFile(zip_file, 'r') as zf_in:
+            with zipfile.ZipFile(new_zip, 'w', compression=zipfile.ZIP_DEFLATED) as zf_out:
+                for item in zf_in.infolist():
+                    data = zf_in.read(item.filename)
+                    
+                    # section*.xml 파일 처리
+                    if 'section' in item.filename.lower() and item.filename.endswith('.xml'):
+                        try:
+                            text = data.decode('utf-8')
+                            # XML 태그 내의 텍스트만 처리
+                            fixed_text = re.sub(
+                                r'>([^<]+)<',
+                                lambda m: '>' + compose_hangul(m.group(1)) + '<',
+                                text
+                            )
+                            if fixed_text != text:
+                                data = fixed_text.encode('utf-8')
+                                modified = True
+                                print(f"[DEBUG] {item.filename} 수정됨")
+                        except Exception as e:
+                            print(f"[DEBUG] {item.filename} 처리 실패: {e}")
+                    
+                    zf_out.writestr(item, data)
+        
+        if modified:
+            new_zip.seek(0)
+            return new_zip.read(), True
+        
+        return hwp_data, False
+        
+    except Exception as e:
+        print(f"[DEBUG] HWP 5.0 처리 실패: {e}")
+        return hwp_data, False
+
+
+def fix_hwp3_content(hwp_data: bytes) -> tuple[bytes, bool]:
+    """HWP 3.0~4.0 (OLE 기반) 파일 처리"""
+    import io
+    import zlib
+    
+    try:
+        import olefile
+        
+        ole_file = io.BytesIO(hwp_data)
+        ole = olefile.OleFileIO(ole_file)
+        modified = False
+        
+        # 새 OLE 파일 생성
+        new_ole_buf = io.BytesIO()
+        new_ole = olefile.OleFileIO()
+        
+        # 모든 스트림 복사
+        for entry in ole.listdir():
+            stream_path = entry
+            stream_name = '/'.join(entry)
+            stream_data = ole.openstream(entry).read()
+            
+            # BodyText/Section* 스트림 처리
+            if len(entry) >= 2 and entry[0] == 'BodyText' and entry[1].startswith('Section'):
+                try:
+                    # zlib 압축 해제 시도
+                    try:
+                        decompressed = zlib.decompress(stream_data)
+                    except:
+                        decompressed = stream_data
+                    
+                    # UTF-16LE로 디코딩 시도
+                    text = decompressed.decode('utf-16le', errors='ignore')
+                    
+                    # 자모 조합
+                    fixed_text = compose_hangul(text)
+                    
+                    if fixed_text != text:
+                        # 다시 인코딩 및 압축
+                        fixed_data = fixed_text.encode('utf-16le')
+                        try:
+                            stream_data = zlib.compress(fixed_data)
+                        except:
+                            stream_data = fixed_data
+                        
+                        modified = True
+                        print(f"[DEBUG] {stream_name} 수정됨")
+                        
+                except Exception as e:
+                    print(f"[DEBUG] {stream_name} 처리 중 오류: {e}")
+            
+            # 스트림 저장
+            new_ole.save(stream_path, stream_data)
+        
+        if modified:
+            new_ole.save(new_ole_buf)
+            new_ole_buf.seek(0)
+            result = new_ole_buf.read()
+            ole.close()
+            new_ole.close()
+            return result, True
+        
+        ole.close()
+        new_ole.close()
+        return hwp_data, False
+        
+    except Exception as e:
+        print(f"[DEBUG] HWP 3.0 처리 실패: {e}")
+        return hwp_data, False

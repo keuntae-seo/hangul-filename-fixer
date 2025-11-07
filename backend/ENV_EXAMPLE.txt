@@ -13,3 +13,17 @@ ALLOWED_ORIGINS=https://your-app.netlify.app
 # 파일 크기 제한 (MB)
 MAX_FILE_MB=100
 
+# PostgreSQL 데이터베이스 URL (선택 사항)
+# 설정하지 않으면 파일 로그만 사용됩니다
+# 형식: postgresql://username:password@host:port/database
+# 
+# Supabase 예시:
+# DATABASE_URL=postgresql://postgres.xxxxxxxxxxxxx:your-password@aws-0-ap-northeast-2.pooler.supabase.com:6543/postgres
+#
+# Neon 예시:
+# DATABASE_URL=postgresql://username:password@ep-xxx-xxx.us-east-2.aws.neon.tech/neondb
+#
+# Render 예시:
+# DATABASE_URL=postgres://username:password@dpg-xxxxxxxxxxxxx.oregon-postgres.render.com/dbname
+DATABASE_URL=
+
